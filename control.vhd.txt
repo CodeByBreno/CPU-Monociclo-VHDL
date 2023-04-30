@@ -1,0 +1,129 @@
+----------------------------------------------------------
+-- Control              								--
+-- myMIPS												--
+-- Prof. Max Santana (2022)								--
+-- CEComp/Univasf										--
+----------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity control is
+  port(
+    op		 : in std_logic_vector(5 downto 0);
+	regDst	 : out std_logic_vector(1 downto 0); --agora o seletor precisa ter 2 bits
+	jump	 : out std_logic_vector (1 downto 0);
+    branch	 : out std_logic;
+    bne		 : out std_logic;
+    memWR	 : out std_logic; -- when 0 (write), 1 (read)
+    memToReg : out std_logic_vector(1 downto 0);
+    aluOp	 : out std_logic_vector(1 downto 0); -- when 10 (R-type), 00 (addi, lw, sw), 01 (beq, bne), xx (j)
+    aluSrc	 : out std_logic;
+    regWrite : out std_logic;
+    
+    --para o jr
+    func : IN std_logic_vector(5 downto 0)
+  );
+end control;
+
+architecture behavior of control is
+begin
+  process(op)
+  begin
+  	--verificando se deve ser usado um jr
+    IF func = "001000" THEN
+    	regDst	 <= "00";
+	    jump	 <= "10";
+        branch	 <= '0';
+        bne	 	 <= '0';
+        memWR	 <= 'X';
+        memToReg <= "00";
+        aluOp	 <= "00";
+        aluSrc	 <= '0';
+        regWrite <= '0'; 
+    ELSE
+      case (op) is
+        when "000000" => -- R type			   
+          regDst	 <= "01";
+          jump	 <= "00";
+          branch	 <= '0';
+          bne	 	 <= '0';
+          memWR	 <= 'X';
+          memToReg <= "00";
+          aluOp	 <= "10";
+          aluSrc	 <= '0';
+          regWrite <= '1';  
+        when "100011" => -- lw
+
+        when "101011" => -- sw
+
+        when "000100" => -- beq
+          regDst	 <= "00";
+          jump	 <= "00";
+          branch	 <= '1';        
+          bne	 	 <= '0';
+          memWR	 <= 'X';
+          memToReg <= "XX";
+          aluOp	 <= "01";
+          aluSrc	 <= '0';
+          regWrite <= '0';
+
+        when "000101" => -- bne
+          regDst	 <= "00";
+          jump	 <= "00";
+          branch	 <= '0';        
+          bne	 	 <= '1';
+          memWR	 <= 'X';
+          memToReg <= "XX";
+          aluOp	 <= "01";
+          aluSrc	 <= '0';
+          regWrite <= '0';
+
+        when "001000" => -- addi
+          regDst	 <= "00";
+          jump	 <= "00";
+          branch	 <= '0';        
+          bne	 	 <= '0';
+          memWR	 <= 'X';
+          memToReg <= "00";
+          aluOp	 <= "00";
+          aluSrc	 <= '1';
+          regWrite <= '1';
+
+        when "000010" => -- j      
+          regDst	 <= "00";
+          jump	 <= "01"; --mux2 seleciona w_sig32
+          branch	 <= '0';        
+          bne	 	 <= '0';
+          memWR	 <= 'X';
+          memToReg <= "00";
+          aluOp	 <= "00";
+          aluSrc	 <= '0';
+          regWrite <= '0';
+
+        when "000011" => -- jal      
+          regDst	 <= "10";
+          jump	 <= "01"; 
+          branch	 <= '0';        
+          bne	 	 <= '0';
+          memWR	 <= 'X';
+          memToReg <= "10";
+          aluOp	 <= "00";
+          aluSrc	 <= '0';
+          regWrite <= '1';
+
+        when others =>
+          regDst	 <= "XX";
+          jump	 <= "XX";
+          branch	 <= 'X';
+          bne	 	 <= 'X';
+          memWR	 <= 'X';
+          memToReg <= "XX";
+          aluOp	 <= "XX";
+          aluSrc	 <= 'X';
+          regWrite <= '0';        
+      end case;	
+    END IF;
+  end process;
+
+end behavior;

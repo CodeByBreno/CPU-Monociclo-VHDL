@@ -1,0 +1,24 @@
+----------------------------------------------------------
+-- Shift left 											--
+-- myMIPS												--
+-- Prof. Max Santana (2022)								--
+-- CEComp/Univasf										--
+----------------------------------------------------------
+
+--necessário para implementar o shift left de 25 bits no Jump
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+
+entity shiftLeft2 is 
+  port(
+    dataIn  :in  std_logic_vector(31 downto 0);
+    dataOut :out std_logic_vector(31 downto 0)
+  );
+end entity;
+
+architecture behv of shiftLeft2 is 
+begin
+  dataOut <= dataIn sll 2;
+end behv;

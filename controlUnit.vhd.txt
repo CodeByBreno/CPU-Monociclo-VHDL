@@ -1,0 +1,107 @@
+------------------------------------------
+-- Control Unit                         --
+-- myMIPS                               --
+-- Prof. Max Santana  (2022)            --
+-- CEComp/Univasf                       --
+------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity controlUnit is
+  port(
+    clk   	 	: in std_logic;
+    rst   	 	: in std_logic;
+    inst	 	: in std_logic_vector(31 downto 0);
+    imm32	 	: in std_logic_vector(31 downto 0);
+    zero	 	: in std_logic;
+    pass	 	: in std_logic;
+    add_inst 	: out std_logic_vector(31 downto 0);
+    rs		 	: out std_logic_vector(4 downto 0);
+    rt		 	: out std_logic_vector(4 downto 0);
+    writeR	 	: out std_logic_vector(4 downto 0);
+    shamt	 	: out std_logic_vector(10 downto 6);
+    addr     	: out std_logic_vector(25 downto 0);
+    funct	 	: out std_logic_vector(5 downto 0);
+    imm	     	: out std_logic_vector(15 downto 0);
+    alusrc	 	: out std_logic;
+    regwrite 	: out std_logic;
+    memreadwrite: out std_logic;
+    memtoreg	: out std_logic_vector(1 downto 0);
+    Aluop		: out std_logic_vector(1 downto 0);
+    
+    --nova porta para permitir o jr
+    jrsel : in std_logic_vector(31 downto 0);
+    
+    --nova porta para permitir o jal
+    memd2 : out std_logic_vector(31 downto 0);
+  );
+end controlUnit;
+
+architecture behv of controlUnit is
+  signal w_d			: std_logic_vector(31 downto 0);
+  signal w_q			: std_logic_vector(31 downto 0);
+  signal w_s_add1		: std_logic_vector(31 downto 0);
+  signal w_b_add2		: std_logic_vector(31 downto 0);
+  signal w_s_add2		: std_logic_vector(31 downto 0);
+  signal w_pcsrc		: std_logic;
+  signal w_op			: std_logic_vector(5 downto 0);
+  signal w_rs			: std_logic_vector(4 downto 0);
+  signal w_rt			: std_logic_vector(4 downto 0);
+  signal w_rd			: std_logic_vector(4 downto 0);
+  signal w_shamt		: std_logic_vector(4 downto 0);
+  signal w_funct		: std_logic_vector(5 downto 0);
+  signal w_imm			: std_logic_vector(15 downto 0);
+  signal w_regdst		: std_logic_vector (1 downto 0) := "00"; --para bater com o novo seletor de 2 bits
+  
+  signal w_alusrc		: std_logic := '0';
+  --signal w_regwrite : std_logic := '0';
+  signal w_branch		: std_logic;
+  signal w_alubranchB 	: std_logic_vector(31 downto 0);
+  signal w_resultADD1	: std_logic_vector(31 downto 0);
+  signal w_resultADDB	: std_logic_vector(31 downto 0);
+  
+  --Adição do Jump
+  signal w_jump  : std_logic_vector(1 downto 0);
+  signal w_addr  : std_logic_vector(25 downto 0); --coloquei aq por organização
+  signal w_sig32 : std_logic_vector(31 downto 0);
+  signal w_sig25 : std_logic_vector(25 downto 0);
+  signal w_y : std_logic_vector (31 downto 0);
+  
+  --adição do bne
+  signal w_bne : std_logic;
+  
+begin
+  PC	 	: entity work.rreg32 port map (clk => clk, rst => rst, d => w_d, q => add_inst);
+  
+  ADD1	 	: entity work.adder32 port map (a => add_inst, b => x"00000004", s => w_resultADD1);
+  
+  DECODER	: entity work.idecoder port map (i => inst, op => w_op, rs => w_rs, rt => w_rt, rd => w_rd, shamt => w_shamt, funct => w_funct, imm => w_imm, addr => w_addr);
+  
+  MUXREG 	: entity work.MUX35 port map (d0 => w_rt, d1 => w_rd, d2 => "11111", y => writeR, s => w_regdst);
+  
+  CONTROL  	: entity work.control port map (op => w_op, regDst => w_regdst, jump => w_jump, branch => w_branch, bne => w_bne, memtoreg => memtoreg, aluop => aluop, alusrc => alusrc, regwrite => regwrite, func => w_funct);
+  
+  SHIFTL2  	: entity work.shiftLeft2 port map (dataIn => imm32, dataOut => w_alubranchB);
+  
+  ADDBRANCH	: entity work.adder32 port map (a => w_resultADD1, b => w_alubranchB, s => w_resultADDB);
+  
+  MUXBRANCH	: entity work.MUX232 port map (d0 => w_resultADD1, d1 => w_resultADDB, s => (w_branch AND zero) OR ((NOT zero) AND w_bne), y => w_y);
+  
+  --novos componentes para permitir o jump
+  SHIFTL25 : entity work.SLeft25 PORT MAP (datain => w_addr, dataout => w_sig25);
+  MUXJUMP : entity work.MUX3 PORT MAP (d0 => w_y, d1 => w_sig32, d2 => jrsel, s => w_jump, y => w_d);
+  
+   
+  memd2 <= w_resultADD1;
+  w_sig32(31 downto 26) <= w_resultADD1(31 downto 26);
+  w_sig32(25 downto 0) <= w_sig25;
+  rs <= w_rs;
+  rt <= w_rt;
+  shamt <= w_shamt;
+  funct <= w_funct;
+  addr <= w_addr;
+  imm <= w_imm;
+  alusrc <= w_alusrc;
+  --regwrite <= w_regwrite;
+end architecture behv;

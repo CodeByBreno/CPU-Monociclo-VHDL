@@ -1,0 +1,63 @@
+-- Code your testbench here
+library IEEE;
+use IEEE.std_logic_1164.all;
+----------------------------------
+-- Testbench myMIPS             --
+--                              --
+-- Prof. Max Santana  (2022)    --
+-- CEComp/Univasf               --
+----------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity testbench is
+end entity testbench;
+
+architecture tb of testbench is
+  signal clock, reset 	: std_logic := '0';
+  constant clock_period : time := 10 ns;
+  signal w_addInst		: std_logic_vector(31 downto 0);
+  signal w_inst			: std_logic_vector(31 downto 0);
+  signal w_addDados		: std_logic_vector(31 downto 0);
+  --signal w_CE			: std_logic;
+  signal w_RW			: std_logic;
+  signal w_dados_in		: std_logic_vector(31 downto 0);
+  signal w_dados_out		: std_logic_vector(31 downto 0);
+  
+  signal w_d, w_q, w_imm32 : std_logic_vector(31 downto 0);
+  signal w_rs, w_rt, w_writeR	: std_logic_vector(4 downto 0);
+  signal w_imm	: std_logic_vector(15 downto 0);
+begin
+  CPU	: entity work.myMIPS port map (clk => clock, rst => reset, inst => w_inst, add_inst => w_addInst, add_dados => w_addDados, rw => w_rw, dados_in => w_dados_in, dados_out => w_dados_out);
+                                       
+  ROM	: entity work.imemory port map (address => w_addInst, data_out => w_inst);
+  
+  RAM	: entity work.dmemory port map (datain => w_dados_out, address => w_addDados, w_r => w_rw, dataout => w_dados_in);
+  
+  --PC: entity work.rreg32 port map (clk => clock, rst => reset, d => w_d, q => w_q);
+  --ADD1	: entity work.adder32 port map (a => w_q, b => x"00000004", s => w_d);
+  --CTRL		: entity work.controlUnit port map (clk => clock, rst => reset, add_inst => w_addinst);
+  
+  clock_process :process
+  begin
+    for i in 0 to 100 loop
+      Clock <= '0';
+      wait for clock_period/2;
+      Clock <= '1';
+      wait for clock_period/2;
+	end loop;
+    wait;
+  end process;
+  
+  process
+  begin    
+    reset <= '1';
+    wait for clock_period/2;
+    --
+    reset <= '0';
+    
+    wait;
+  end process;
+  
+end architecture tb;

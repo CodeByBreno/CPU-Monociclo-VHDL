@@ -1,0 +1,60 @@
+------------------------------------------
+-- myMIPS                               --
+--                                      --
+-- Prof. Max Santana  (2022)            --
+-- CEComp/Univasf                       --
+------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity myMIPS is
+  port(
+    clk   	  : in std_logic;
+    rst   	  : in std_logic;
+    inst	  : in std_logic_vector(31 downto 0);
+    add_inst  : out std_logic_vector(31 downto 0);
+    add_dados : out std_logic_vector(31 downto 0);
+    --ce		 : out std_logic;
+    rw		  : out std_logic;
+    dados_in  : in std_logic_vector(31 downto 0);
+    dados_out : out std_logic_vector(31 downto 0)
+  );
+end myMIPS;
+
+architecture behv of myMIPS is
+  signal w_imm32	: std_logic_vector(31 downto 0);
+  signal w_rs		: std_logic_vector(4 downto 0);
+  signal w_rt		: std_logic_vector(4 downto 0);
+  signal w_writeR	: std_logic_vector(4 downto 0);
+  signal w_shamt	: std_logic_vector(10 downto 6);
+  signal w_addr     : std_logic_vector(25 downto 0);
+  signal w_funct	: std_logic_vector(5 downto 0);
+  signal w_imm		: std_logic_vector(15 downto 0);
+  signal w_alusrc	: std_logic;
+  signal w_regwrite	: std_logic;
+  signal w_writedata: std_logic_vector(31 downto 0);
+  signal w_result	: std_logic_vector(31 downto 0);
+  signal w_dataRAM	: std_logic_vector(31 downto 0);
+  signal w_zero		: std_logic;
+  signal w_pass		: std_logic;
+  signal w_rw		: std_logic;  
+  signal w_memtoreg	: std_logic_vector(1 downto 0);
+  signal w_aluop	: std_logic_vector(1 downto 0);
+  
+  --fio para o jrsel
+  signal w_jrsel : std_logic_vector(31 downto 0);
+  
+  --fio para o jal
+  signal w_memd2 : std_logic_vector(31 downto 0);
+  
+begin
+  CTRL		: entity work.controlUnit port map (clk => clk, rst => rst, inst => inst, imm32 => w_imm32, zero => w_zero, pass => w_pass, add_inst => add_inst, rs => w_rs, rt => w_rt, writeR => w_writeR, shamt => w_shamt, addr => w_addr, funct => w_funct, imm => w_imm, alusrc => w_alusrc, regwrite => w_regwrite, memreadwrite => w_rw, memtoreg => w_memtoreg, aluop => w_aluop, jrsel => w_jrsel, memd2 => w_memd2);
+  
+  DATAPATH	: entity work.datapath port map (clk => clk, rst => rst, rs => w_rs, rt => w_rt, writeR => w_writeR, shamt => w_shamt, addr => w_addr, funct => w_funct, imm => w_imm, alusrc => w_alusrc, regwrite => w_regwrite, dataRAM => w_dataRAM, memtoreg => w_memtoreg, aluop => w_aluop, imm32 => w_imm32, writedata => w_writedata, result => w_result, zero => w_zero, pass => w_pass, jrsel => w_jrsel,memd2 => w_memd2);
+  
+  dados_out <= w_writedata;
+  add_dados <= w_result;
+  rw <= w_rw;
+  
+end architecture behv;
